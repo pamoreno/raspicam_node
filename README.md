@@ -13,27 +13,35 @@ If you want to build from source instead of using the binary follow this section
 
 This node is primarily supported on ROS Kinetic, and Ubuntu 16.04, and that is what these instuctions presume.
 
-Go to your catkin_ws `cd ~/catkin_ws/src`.
+```bash
+# Create a workspace:
+export RASPICAM_WS=~/catkin_ws
+mkdir -p $RASPICAM_WS/src
+cd $RASPICAM_WS
+catkin init
+wstool init src
 
-Download the source for this node by running
+# Clone this repo into `src`:
+cd $RASPICAM_WS/src
+git clone --depth 1 https://github.com/UbiquityRobotics/raspicam_node.git
 
-`git clone https://github.com/UbiquityRobotics/raspicam_node.git`
+# There are some dependencies that are not recognized by ROS, so you need to create the file `/etc/ros/rosdep/sources.list.d/30-ubiquity.list` and them.
+sudo sh -c 'echo "yaml https://raw.githubusercontent.com/UbiquityRobotics/rosdep/master/raspberry-pi.yaml" > /etc/ros/rosdep/sources.list.d/30-ubiquity.list'
 
-There are some dependencies that are not recognized by ros, so you need to create the file `/etc/ros/rosdep/sources.list.d/30-ubiquity.list` and add this to it.
+# Update ros dependencies
+rosdep update
+
+# Install the ros dependencies
+[[ "x$ROS_DISTRO" != "x" ]] || { distros=(/opt/ros/*) && export ROS_DISTRO=$(basename ${distros[-1]}) ; }
+echo "Detected ROS $ROS_DISTRO (ROS_DISTRO=$ROS_DISTRO)"
+cd $RASPICAM_WS
+rosdep install --from-paths src --ignore-src --rosdistro=$ROS_DISTRO -y
+
+# Compile
+cd $RASPICAM_WS
+catkin build
+source $RASPICAM_WS/devel/setup.bash
 ```
-yaml https://raw.githubusercontent.com/UbiquityRobotics/rosdep/master/raspberry-pi.yaml
-```
-
-Then run `rosdep update`.
-
-Install the ros dependencies,
-
-```
-cd ~/catkin_ws
-rosdep install --from-paths src --ignore-src --rosdistro=kinetic -y
-```
-
-Compile the code with `catkin_make`.
 
 ## Running the Node
 Once you have the node built, you can run it using a launch file.
@@ -157,9 +165,9 @@ roslaunch raspicam_node camerav2_410x308_30fps.launch enable_imv:=true
 On your workstation, build raspicam_node so that the `MotionVectors` ROS message is recognized by Python:
 
 ```
-cd ~/catkin_ws
-catkin_make
-source ~/catkin_ws/devel/setup.bash
+cd $RASPICAM_WS
+catkin build
+source $RASPICAM_WS/devel/setup.bash
 ```
 
 Finally, run script `imv_view.py` to visualize the motion vectors:
